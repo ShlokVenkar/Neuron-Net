@@ -33,12 +33,17 @@ const LoginSeller = () => {
       if (error) throw error;
 
       // Check if user_type is 'seller'
-      if (data.user.user_metadata.user_type !== 'seller') {
+      const userType = data.user?.user_metadata?.user_type;
+      
+      if (!userType) {
+        // If no user_type, might be old account, default behavior
+        navigate('/dashboard/seller');
+      } else if (userType !== 'seller') {
         await supabase.auth.signOut();
-        throw new Error('Please use the user login page');
+        throw new Error('This account is not registered as a seller. Please use the user login page.');
+      } else {
+        navigate('/dashboard/seller');
       }
-
-      navigate('/dashboard/seller');
     } catch (error) {
       setError(error.message);
     } finally {

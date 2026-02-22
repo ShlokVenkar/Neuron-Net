@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { generateMonadWallet, encryptWalletKey } from '../utils/monadWallet';
 import './Auth.css';
 
 const SignupSeller = () => {
@@ -27,6 +28,15 @@ const SignupSeller = () => {
     setError('');
 
     try {
+      // Generate Monad wallet
+      const walletData = generateMonadWallet();
+      if (!walletData.success) {
+        throw new Error('Failed to generate wallet');
+      }
+
+      // Encrypt the private key with user's password
+      const encryptedWallet = await encryptWalletKey(walletData.privateKey, formData.password);
+
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -34,14 +44,25 @@ const SignupSeller = () => {
           data: {
             full_name: formData.fullName,
             company: formData.company,
-            user_type: 'seller'
+            user_type: 'seller',
+            wallet_address: walletData.address,
+            encrypted_wallet: encryptedWallet,
+            mnemonic: walletData.mnemonic
           }
         }
       });
 
       if (error) throw error;
 
-      alert('Check your email for the confirmation link!');
+      alert(`✅ Account created!
+
+🔐 Your Monad Wallet:
+${walletData.address}
+
+⚠️ IMPORTANT: Save your recovery phrase:
+"${walletData.mnemonic}"
+
+Check your email for confirmation link.`);
       navigate('/login-seller');
     } catch (error) {
       setError(error.message);

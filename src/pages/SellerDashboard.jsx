@@ -15,11 +15,15 @@ const SellerDashboard = () => {
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      navigate('/login-seller');
+      navigate('/login');
     } else {
       setUser(user);
     }
     setLoading(false);
+  };
+
+  const canSwitchToUser = () => {
+    return user?.user_metadata?.user_type === 'both' || user?.user_metadata?.user_type === 'user';
   };
 
   const handleLogout = async () => {
@@ -83,6 +87,18 @@ const SellerDashboard = () => {
             <p>Monitor your resources and earnings</p>
           </div>
           <div className="user-profile">
+            {canSwitchToUser() && (
+              <button 
+                className="role-switcher"
+                onClick={() => navigate('/dashboard/user')}
+                title="Switch to User Dashboard"
+              >
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                User
+              </button>
+            )}
             <div className="user-avatar seller">
               {user?.user_metadata?.full_name?.charAt(0) || 'S'}
             </div>

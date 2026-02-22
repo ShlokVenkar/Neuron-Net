@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { generateMonadWallet, encryptWalletKey } from '../utils/monadWallet';
 import './Auth.css';
 
-const SignupUser = () => {
+const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    fullName: ''
+    password: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,33 +25,26 @@ const SignupUser = () => {
     setError('');
 
     try {
-      // Generate Monad wallet
-      const walletData = generateMonadWallet();
-      if (!walletData.success) {
-        throw new Error('Failed to generate wallet');
-      }
-
-      // Encrypt the private key with user's password
-      const encryptedWallet = await encryptWalletKey(walletData.privateKey, formData.password);
-
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-            user_type: 'user',
-            wallet_address: walletData.address,
-            encrypted_wallet: encryptedWallet,
-            mnemonic: walletData.mnemonic // Store securely - in production, encrypt this
-          }
-        }
+        password: formData.password
       });
 
       if (error) throw error;
 
-      alert(`✅ Account created!\n\n🔐 Your Monad Wallet:\n${walletData.address}\n\n⚠️ IMPORTANT: Save your recovery phrase:\n"${walletData.mnemonic}"\n\nCheck your email for confirmation link.`);
-      navigate('/login-user');
+      // Get user type from metadata
+      const userType = data.user?.user_metadata?.user_type;
+      
+      // Redirect based on user type
+      if (userType === 'seller') {
+        navigate('/dashboard/seller');
+      } else if (userType === 'both') {
+        // If user has both roles, default to user dashboard with option to switch
+        navigate('/dashboard/user');
+      } else {
+        // Default to user dashboard
+        navigate('/dashboard/user');
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -65,25 +56,12 @@ const SignupUser = () => {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-card">
-          <h2 className="auth-title">Sign Up as User</h2>
-          <p className="auth-subtitle">Access global compute power instantly</p>
+          <h2 className="auth-title">Welcome Back</h2>
+          <p className="auth-subtitle">Log in to your Neuron-Net account</p>
 
           {error && <div className="auth-error">{error}</div>}
 
           <form onSubmit={handleSubmit} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="fullName">Full Name</label>
-              <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                placeholder="John Doe"
-                required
-              />
-            </div>
-
             <div className="form-group">
               <label htmlFor="email">Email</label>
               <input
@@ -107,22 +85,21 @@ const SignupUser = () => {
                 onChange={handleChange}
                 placeholder="••••••••"
                 required
-                minLength="6"
               />
             </div>
 
             <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? 'Creating Account...' : 'Sign Up'}
+              {loading ? 'Logging in...' : 'Log In'}
             </button>
           </form>
 
-          <p className="auth-link">
-            Already have an account? <a href="/login-user">Log in</a>
-          </p>
+          <div className="auth-footer">
+            <p>Don't have an account? <a href="/signup">Sign Up</a></p>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default SignupUser;
+export default Login;
