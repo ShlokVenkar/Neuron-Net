@@ -156,7 +156,7 @@ const UserDashboard = () => {
       logs: [
         `[${new Date().toLocaleTimeString()}] GPU ${selectedResource.name} initialized`,
         `[${new Date().toLocaleTimeString()}] Loading compute environment...`,
-        `[${new Date().toLocaleTimeString()}] Starting task: ${rentFormData.workDescription}`,
+        rentFormData.workDescription ? `[${new Date().toLocaleTimeString()}] Starting task: ${rentFormData.workDescription}` : `[${new Date().toLocaleTimeString()}] Starting compute task...`,
         `[${new Date().toLocaleTimeString()}] Processing... 0% complete`
       ]
     };
@@ -171,7 +171,7 @@ const UserDashboard = () => {
         id: Date.now(),
         userName: user?.user_metadata?.full_name || 'User',
         userEmail: user?.email || '',
-        workDescription: rentFormData.workDescription,
+        workDescription: rentFormData.workDescription || 'User requested assistance for GPU compute task (no description provided)',
         resourceName: selectedResource.name,
         jobId: newJob.id,
         timestamp: new Date().toLocaleString(),
@@ -665,8 +665,7 @@ const UserDashboard = () => {
               <form onSubmit={handleRentSubmit}>
                 <div className="form-group">
                   <label htmlFor="workDescription">
-                    Describe the work you need to do
-                    <span className="label-required">*</span>
+                    Describe the work you need to do <span style={{color: '#9ca3ff', fontSize: '0.85rem'}}>(optional)</span>
                   </label>
                   <textarea
                     id="workDescription"
@@ -674,7 +673,6 @@ const UserDashboard = () => {
                     value={rentFormData.workDescription}
                     onChange={(e) => setRentFormData({...rentFormData, workDescription: e.target.value})}
                     placeholder="Example: I need to train a CNN model for image classification with 10,000 images..."
-                    required
                   />
                 </div>
 
