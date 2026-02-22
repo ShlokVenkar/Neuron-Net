@@ -7,6 +7,14 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showRentModal, setShowRentModal] = useState(false);
+  const [selectedResource, setSelectedResource] = useState(null);
+  const [rentFormData, setRentFormData] = useState({
+    workDescription: '',
+    needAssistance: false
+  });
+  const [monBalance, setMonBalance] = useState(150.75); // Mock balance, would fetch from blockchain
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -29,6 +37,56 @@ const UserDashboard = () => {
 
   const canSwitchToSeller = () => {
     return user?.user_metadata?.user_type === 'both' || user?.user_metadata?.user_type === 'seller';
+  };
+
+  const handleRentClick = (resource) => {
+    setSelectedResource(resource);
+    setShowRentModal(true);
+  };
+
+  const handleRentSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Check if user has sufficient MON balance
+    const resourcePrice = selectedResource.priceValue;
+    if (monBalance < resourcePrice) {
+      alert(`❌ Insufficient MON tokens!\n\nRequired: ${resourcePrice} MON\nYour balance: ${monBalance} MON\n\nPlease add MON tokens to your wallet.`);
+      return;
+    }
+    
+    // Simulate payment transaction
+    const newBalance = monBalance - resourcePrice;
+    setMonBalance(newBalance);
+    
+    if (rentFormData.needAssistance) {
+      // In a real app, this would submit to a database and blockchain
+      alert(`✅ Payment successful! Rent request submitted!\n\nResource: ${selectedResource.name}\nCost: ${resourcePrice} MON\nNew Balance: ${newBalance.toFixed(2)} MON\n\nWork: ${rentFormData.workDescription}\n\n📞 Our technical team will contact you shortly to assist with your setup!`);
+    } else {
+      alert(`✅ Payment successful! Rent request submitted!\n\nResource: ${selectedResource.name}\nCost: ${resourcePrice} MON\nNew Balance: ${newBalance.toFixed(2)} MON\n\nWork: ${rentFormData.workDescription}\n\nYou will receive setup instructions via email.`);
+    }
+    
+    setShowRentModal(false);
+    setRentFormData({ workDescription: '', needAssistance: false });
+    setSelectedResource(null);
+  };
+
+  const closeModal = () => {
+    setShowRentModal(false);
+    setRentFormData({ workDescription: '', needAssistance: false });
+    setSelectedResource(null);
+  };
+
+  const copyWalletAddress = async () => {
+    const walletAddress = user?.user_metadata?.wallet_address;
+    if (walletAddress) {
+      try {
+        await navigator.clipboard.writeText(walletAddress);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (err) {
+        alert('Failed to copy address');
+      }
+    }
   };
 
   if (loading) return <div className="dashboard-loading">Loading...</div>;
@@ -138,8 +196,61 @@ const UserDashboard = () => {
             </div>
             <div className="stat-content">
               <h3>Total Spent</h3>
-              <p className="stat-value">$0.00</p>
+              <p className="stat-value">0 MON</p>
             </div>
+          </div>
+        </div>
+
+        {/* Wallet Info Card */}
+        <div className="wallet-card">
+          <div className="wallet-header">
+            <div className="wallet-icon">
+              <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+              </svg>
+            </div>
+            <div className="wallet-info">
+              <h3>Your Monad Wallet</h3>
+              <p className="wallet-balance">{monBalance.toFixed(2)} MON</p>
+            </div>
+          </div>
+          <div className="wallet-address-container">
+            <div className="wallet-address">
+              <span className="address-label">Address:</span>
+              <span className="address-text">{user?.user_metadata?.wallet_address?.slice(0, 6)}...{user?.user_metadata?.wallet_address?.slice(-4)}</span>
+            </div>
+            <button className="btn-copy" onClick={copyWalletAddress} title="Copy wallet address">
+              {copySuccess ? (
+                <>
+                  <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                  </svg>
+                  Copy Address
+                </>
+              )}
+            </button>
+          </div>
+          <p className="wallet-note">💡 Send MON tokens to this address to add funds. <a href="https://faucet.monad.xyz" target="_blank" rel="noopener noreferrer">Get testnet tokens</a></p>
+        </div>
+
+        {/* Advertisement Section */}
+        <div className="ad-section">
+          <div className="ad-banner">
+            <div className="ad-content">
+              <div className="ad-icon">📢</div>
+              <div className="ad-text">
+                <h3>YOUR AD HERE</h3>
+                <p>Advertise your GPU compute services or AI tools</p>
+              </div>
+            </div>
+            <button className="btn-ad-contact">Contact Us</button>
           </div>
         </div>
 
@@ -151,37 +262,155 @@ const UserDashboard = () => {
               <div className="resource-item">
                 <div className="resource-info">
                   <h4>NVIDIA RTX 4090</h4>
-                  <p>24GB VRAM • 16,384 CUDA Cores</p>
+                  <p>24GB VRAM • 16,384 CUDA Cores • Best for Gaming & Light AI</p>
                 </div>
                 <div className="resource-price">
-                  <span className="price">$2.50/hr</span>
-                  <button className="btn-rent">Rent Now</button>
+                  <span className="price">12 MON/hr</span>
+                  <button 
+                    className="btn-rent" 
+                    onClick={() => handleRentClick({ name: 'NVIDIA RTX 4090', price: '12 MON/hr', priceValue: 12, specs: '24GB VRAM • 16,384 CUDA Cores' })}
+                  >
+                    Rent Now
+                  </button>
                 </div>
               </div>
               <div className="resource-item">
                 <div className="resource-info">
                   <h4>NVIDIA A100</h4>
-                  <p>40GB VRAM • 6,912 CUDA Cores</p>
+                  <p>40GB VRAM • 6,912 CUDA Cores • AI Training & Research</p>
                 </div>
                 <div className="resource-price">
-                  <span className="price">$3.80/hr</span>
-                  <button className="btn-rent">Rent Now</button>
+                  <span className="price">28 MON/hr</span>
+                  <button 
+                    className="btn-rent"
+                    onClick={() => handleRentClick({ name: 'NVIDIA A100', price: '28 MON/hr', priceValue: 28, specs: '40GB VRAM • 6,912 CUDA Cores' })}
+                  >
+                    Rent Now
+                  </button>
+                </div>
+              </div>
+              <div className="resource-item">
+                <div className="resource-info">
+                  <h4>NVIDIA H100</h4>
+                  <p>80GB HBM3 • Advanced AI & ML Workloads</p>
+                </div>
+                <div className="resource-price">
+                  <span className="price">55 MON/hr</span>
+                  <button 
+                    className="btn-rent"
+                    onClick={() => handleRentClick({ name: 'NVIDIA H100', price: '55 MON/hr', priceValue: 55, specs: '80GB HBM3 • Next-gen Architecture' })}
+                  >
+                    Rent Now
+                  </button>
                 </div>
               </div>
               <div className="resource-item">
                 <div className="resource-info">
                   <h4>AMD EPYC 7742</h4>
-                  <p>64 Cores • 128 Threads</p>
+                  <p>64 Cores • 128 Threads • CPU Compute Tasks</p>
                 </div>
                 <div className="resource-price">
-                  <span className="price">$1.20/hr</span>
-                  <button className="btn-rent">Rent Now</button>
+                  <span className="price">8 MON/hr</span>
+                  <button 
+                    className="btn-rent"
+                    onClick={() => handleRentClick({ name: 'AMD EPYC 7742', price: '8 MON/hr', priceValue: 8, specs: '64 Cores • 128 Threads' })}
+                  >
+                    Rent Now
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Rent Modal */}
+      {showRentModal && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Rent Compute Resource</h2>
+              <button className="modal-close" onClick={closeModal}>
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="resource-summary">
+                <h3>{selectedResource?.name}</h3>
+                <p className="resource-specs">{selectedResource?.specs}</p>
+                <p className="resource-price-large">{selectedResource?.price}</p>
+              </div>
+
+              <div className="payment-info">
+                <div className="balance-display">
+                  <span className="balance-label">Your MON Balance:</span>
+                  <span className="balance-amount">{monBalance.toFixed(2)} MON</span>
+                </div>
+                {monBalance < (selectedResource?.priceValue || 0) && (
+                  <div className="insufficient-balance-warning">
+                    ⚠️ Insufficient balance. Please add MON tokens to your wallet.
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleRentSubmit}>
+                <div className="form-group">
+                  <label htmlFor="workDescription">
+                    Describe the work you need to do
+                    <span className="label-required">*</span>
+                  </label>
+                  <textarea
+                    id="workDescription"
+                    rows="5"
+                    value={rentFormData.workDescription}
+                    onChange={(e) => setRentFormData({...rentFormData, workDescription: e.target.value})}
+                    placeholder="Example: I need to train a CNN model for image classification with 10,000 images..."
+                    required
+                  />
+                </div>
+
+                <div className="assistance-option">
+                  <div className="assistance-card">
+                    <div className="assistance-icon">
+                      <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                      </svg>
+                    </div>
+                    <div className="assistance-content">
+                      <h4>Need Technical Assistance?</h4>
+                      <p>Our expert team can help you set up and optimize your compute job</p>
+                    </div>
+                    <label className="checkbox-container">
+                      <input
+                        type="checkbox"
+                        checked={rentFormData.needAssistance}
+                        onChange={(e) => setRentFormData({...rentFormData, needAssistance: e.target.checked})}
+                      />
+                      <span className="checkmark"></span>
+                      <span className="checkbox-label">Request team assistance</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button type="button" className="btn-cancel" onClick={closeModal}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-submit">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                    </svg>
+                    Confirm Rental
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

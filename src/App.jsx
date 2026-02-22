@@ -5,6 +5,7 @@ import Signup from './pages/Signup';
 import Login from './pages/Login';
 import UserDashboard from './pages/UserDashboard';
 import SellerDashboard from './pages/SellerDashboard';
+import TeamDashboard from './pages/TeamDashboard';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard/user" element={<UserDashboard />} />
         <Route path="/dashboard/seller" element={<SellerDashboard />} />
+        <Route path="/dashboard/team" element={<TeamDashboard />} />
       </Routes>
     </BrowserRouter>
   );

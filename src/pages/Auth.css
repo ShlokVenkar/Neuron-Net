@@ -131,6 +131,204 @@
   color: #a78bfa;
 }
 
+.auth-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.auth-footer p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.auth-footer a {
+  color: #8b5cf6;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.auth-footer a:hover {
+  color: #a78bfa;
+}
+
+/* Account Type Selection */
+.account-type-selection {
+  margin: 2rem 0;
+}
+
+.selection-label {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  font-weight: 500;
+}
+
+.type-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.type-button {
+  background: rgba(15, 5, 32, 0.6);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.type-button:hover {
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+}
+
+.type-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(167, 139, 250, 0.2));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a78bfa;
+  margin-bottom: 0.5rem;
+}
+
+.type-button h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.3rem;
+  margin: 0;
+  color: #fff;
+}
+
+.type-button p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Three-column login buttons */
+.type-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.type-button-small {
+  background: rgba(15, 5, 32, 0.6);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.type-button-small:hover {
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+}
+
+.type-icon-small {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(167, 139, 250, 0.2));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a78bfa;
+}
+
+.type-icon-small.team {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(74, 222, 128, 0.2));
+  color: #4ade80;
+}
+
+.type-icon-small.seller {
+  background: linear-gradient(135deg, rgba(192, 132, 252, 0.2), rgba(139, 92, 246, 0.2));
+  color: #c084fc;
+}
+
+.type-button-small h4 {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  margin: 0;
+  color: #fff;
+}
+
+.back-button {
+  background: transparent;
+  border: none;
+  color: #8b5cf6;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  padding: 0.5rem 0;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.back-button:hover {
+  color: #a78bfa;
+}
+
+.team-login-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+}
+
+.team-login-header h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.2rem;
+  color: #4ade80;
+  margin: 0 0 0.5rem 0;
+}
+
+.team-login-header p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.auth-form select {
+  background: rgba(15, 5, 32, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  color: white;
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s ease;
+  outline: none;
+  cursor: pointer;
+}
+
+.auth-form select:focus {
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
 @media (max-width: 768px) {
   .auth-card {
     padding: 2rem;
@@ -139,4 +337,18 @@
   .auth-title {
     font-size: 1.5rem;
   }
-}
+
+  .type-buttons-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .type-button-small {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .type-icon-small {
+    width: 50px;
+    height: 50px;
