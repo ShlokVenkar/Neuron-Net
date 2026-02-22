@@ -130,6 +130,22 @@ const UserDashboard = () => {
     navigate('/');
   };
 
+  const handleSupport = () => {
+    const subject = encodeURIComponent('Neuron Net Support Request');
+    const body = encodeURIComponent(
+      `Hello Neuron Net Support Team,\n\n` +
+      `User Email: ${user?.email || 'N/A'}\n` +
+      `User Name: ${user?.user_metadata?.full_name || 'N/A'}\n` +
+      `Account Type: ${isPremium ? `Premium ${premiumTier?.toUpperCase()}` : 'Standard'}\n\n` +
+      `Issue Description:\n` +
+      `[Please describe your issue here]\n\n` +
+      `---\n` +
+      `Dashboard: User Dashboard\n` +
+      `Timestamp: ${new Date().toLocaleString()}`
+    );
+    window.location.href = `mailto:support@neuronnet.io?subject=${subject}&body=${body}`;
+  };
+
   const canSwitchToSeller = () => {
     return user?.user_metadata?.user_type === 'both' || user?.user_metadata?.user_type === 'seller';
   };
@@ -386,7 +402,11 @@ const UserDashboard = () => {
             </svg>
             Settings
           </a>
-          <a href="#support" className="nav-item">
+          <a 
+            href="#support" 
+            className="nav-item"
+            onClick={(e) => { e.preventDefault(); handleSupport(); }}
+          >
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
             </svg>

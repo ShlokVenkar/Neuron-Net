@@ -1997,3 +1997,417 @@
   margin-top: 0.5rem;
 }
 
+/* ============================================
+   ANALYTICS DASHBOARD STYLES
+   ============================================ */
+
+.analytics-view {
+  width: 100%;
+}
+
+.view-title {
+  font-size: 2rem;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.view-subtitle {
+  color: #9ca3ff;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Analytics Metrics Grid */
+.analytics-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  background: rgba(10, 1, 24, 0.5);
+  border: 1px solid rgba(100, 100, 255, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  animation: slideIn 0.5s ease-out;
+}
+
+.metric-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(102, 126, 234, 0.4);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+}
+
+.metric-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.metric-icon.green {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.metric-icon.orange {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.metric-icon.purple {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+.metric-content {
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 0.9rem;
+  color: #9ca3ff;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.metric-change {
+  font-size: 0.8rem;
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.metric-change.positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.metric-change.neutral {
+  background: rgba(156, 163, 255, 0.15);
+  color: #9ca3ff;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Analytics Charts */
+.analytics-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-card {
+  background: rgba(10, 1, 24, 0.5);
+  border: 1px solid rgba(100, 100, 255, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.chart-title {
+  color: white;
+  font-size: 1.2rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.chart-container {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bar Chart */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 250px;
+  width: 100%;
+  gap: 0.5rem;
+  padding: 0 1rem;
+}
+
+.bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bar-column {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  position: relative;
+}
+
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(to top, #667eea, #764ba2);
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.5rem;
+  animation: growUp 0.8s ease-out;
+  animation-fill-mode: both;
+}
+
+.bar-value {
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.bar-label {
+  color: #9ca3ff;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+@keyframes growUp {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* GPU List */
+.gpu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem;
+}
+
+.gpu-item {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.gpu-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gpu-rank {
+  font-weight: 700;
+  color: #667eea;
+  font-size: 1.1rem;
+  min-width: 30px;
+}
+
+.gpu-name {
+  color: white;
+  font-size: 0.95rem;
+}
+
+.gpu-bar {
+  height: 8px;
+  background: rgba(100, 100, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.gpu-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, #667eea, #f093fb);
+  border-radius: 4px;
+  animation: expandWidth 1s ease-out;
+  animation-fill-mode: both;
+}
+
+.gpu-count {
+  color: #9ca3ff;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}
+
+@keyframes expandWidth {
+  from {
+    width: 0 !important;
+  }
+}
+
+/* Activity Feed */
+.activity-feed {
+  background: rgba(10, 1, 24, 0.5);
+  border: 1px solid rgba(100, 100, 255, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(100, 100, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(100, 100, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+  background: rgba(100, 100, 255, 0.1);
+  border-color: rgba(100, 100, 255, 0.2);
+}
+
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.activity-icon.pending {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.activity-icon.in-progress {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.activity-icon.completed {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-text {
+  color: white;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+.activity-text strong {
+  color: #667eea;
+}
+
+.activity-time {
+  color: #9ca3ff;
+  font-size: 0.8rem;
+}
+
+.activity-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.activity-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.activity-badge.in-progress {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.activity-badge.completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.empty-state-small {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3ff;
+  font-size: 0.95rem;
+}
+
+/* Responsive Analytics */
+@media (max-width: 1200px) {
+  .analytics-charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-metrics {
+    grid-template-columns: 1fr;
+  }
+  
+  .metric-value {
+    font-size: 2rem;
+  }
+  
+  .bar-chart {
+    height: 200px;
+    padding: 0 0.5rem;
+  }
+  
+  .bar-column {
+    height: 150px;
+  }
+  
+  .gpu-item {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .gpu-count {
+    text-align: left;
+  }
+}
