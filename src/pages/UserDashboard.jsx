@@ -30,6 +30,9 @@ const UserDashboard = () => {
   const [isPremium, setIsPremium] = useState(false);
   const [premiumTier, setPremiumTier] = useState(null); // 'pro', 'enterprise'
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showOutputModal, setShowOutputModal] = useState(false);
+  const [selectedOutput, setSelectedOutput] = useState(null);
+  const [downloadingOutput, setDownloadingOutput] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -66,7 +69,24 @@ const UserDashboard = () => {
     const tier = localStorage.getItem('premiumTier');
     setIsPremium(premium);
     setPremiumTier(tier);
+    
+    // Check for jobs with output files
+    checkForOutputFiles();
   }, []);
+  
+  // Function to check for output files
+  const checkForOutputFiles = () => {
+    const jobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+    const jobsWithOutput = jobs.filter(job => job.hasOutput && !job.outputViewed);
+    
+    // If there are new outputs, show notification
+    if (jobsWithOutput.length > 0) {
+      // Show popup for the first unviewed output
+      const firstOutput = jobsWithOutput[0];
+      setSelectedOutput(firstOutput);
+      setShowOutputModal(true);
+    }
+  };
 
   useEffect(() => {
     // Update job progress every 5 minutes
@@ -276,6 +296,53 @@ const UserDashboard = () => {
   const getPremiumDiscount = () => {
     if (!isPremium) return 0;
     return premiumTier === 'enterprise' ? 0.5 : 0.3; // 50% or 30% discount
+  };
+
+  const handleDownloadOutput = async (job) => {
+    setDownloadingOutput(true);
+    
+    try {
+      // Download file from Supabase storage
+      const { data, error } = await supabase.storage
+        .from('neuron-outputs')
+        .download(job.outputFilePath);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Create blob and download
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = job.outputFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      // Mark as viewed
+      const jobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+      const updatedJobs = jobs.map(j => 
+        j.id === job.id ? { ...j, outputViewed: true } : j
+      );
+      localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
+      setActiveJobs(updatedJobs);
+      
+      alert(`✅ Output file downloaded successfully!\nFile: ${job.outputFileName}`);
+      setShowOutputModal(false);
+      
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert(`❌ Error downloading file: ${error.message}`);
+    } finally {
+      setDownloadingOutput(false);
+    }
+  };
+
+  const handleViewOutput = (job) => {
+    setSelectedOutput(job);
+    setShowOutputModal(true);
   };
 
   const getDiscountedPrice = (price) => {
@@ -594,6 +661,21 @@ const UserDashboard = () => {
                         {job.needsAssistance && (
                           <div className="assistance-indicator">
                             👥 Team assistance requested
+                          </div>
+                        )}
+                        
+                        {job.hasOutput && (
+                          <div className="output-available">
+                            <span className="output-badge">📦 Output Ready!</span>
+                            <button 
+                              className="btn-view-output"
+                              onClick={() => handleViewOutput(job)}
+                            >
+                              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                              </svg>
+                              View Output
+                            </button>
                           </div>
                         )}
                         
@@ -921,6 +1003,92 @@ const UserDashboard = () => {
             <div className="subscription-footer">
               <p>💳 Payment processed securely via MON tokens</p>
               <p>✨ Cancel anytime • No hidden fees • Instant activation</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Output Download Modal */}
+      {showOutputModal && selectedOutput && (
+        <div className="modal-overlay" onClick={() => setShowOutputModal(false)}>
+          <div className="modal-content output-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🎉 Your Output is Ready!</h2>
+              <button className="modal-close" onClick={() => setShowOutputModal(false)}>
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="output-info">
+                <div className="output-icon">
+                  <svg width="64" height="64" fill="rgba(102, 126, 234, 0.8)" viewBox="0 0 24 24">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                  </svg>
+                </div>
+                
+                <h3>Task Completed Successfully</h3>
+                <p className="output-description">
+                  The Neuron Net support team has processed your GPU compute task and uploaded the results.
+                </p>
+                
+                <div className="output-details">
+                  <div className="detail-item">
+                    <strong>GPU:</strong>
+                    <span>{selectedOutput.resourceName}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>File Name:</strong>
+                    <span>{selectedOutput.outputFileName}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Status:</strong>
+                    <span className="status-completed">✅ Completed</span>
+                  </div>
+                </div>
+                
+                <div className="output-note">
+                  <svg width="20" height="20" fill="rgba(102, 126, 234, 0.8)" viewBox="0 0 24 24">
+                    <path d="M11 15h2v2h-2zm0-8h2v6h-2zm1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                  </svg>
+                  <p>
+                    Your output file is securely stored in our cloud. Click the button below to download it to your device.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="output-actions">
+                <button 
+                  className="btn-download-output"
+                  onClick={() => handleDownloadOutput(selectedOutput)}
+                  disabled={downloadingOutput}
+                >
+                  {downloadingOutput ? (
+                    <>
+                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" className="spinning">
+                        <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                      </svg>
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                      </svg>
+                      Download Output File
+                    </>
+                  )}
+                </button>
+                <button 
+                  className="btn-secondary"
+                  onClick={() => setShowOutputModal(false)}
+                  disabled={downloadingOutput}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

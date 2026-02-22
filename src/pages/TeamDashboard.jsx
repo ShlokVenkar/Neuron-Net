@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 
 const TeamDashboard = () => {
@@ -11,6 +12,8 @@ const TeamDashboard = () => {
   const [showOutputModal, setShowOutputModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [outputFile, setOutputFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [activeView, setActiveView] = useState('overview'); // overview, help-requests, ad-requests, users, analytics
 
   useEffect(() => {
     checkTeamMember();
@@ -145,17 +148,91 @@ const TeamDashboard = () => {
     setShowOutputModal(true);
   };
 
-  const handleOutputSubmit = (e) => {
+  const handleOutputSubmit = async (e) => {
     e.preventDefault();
-    if (outputFile) {
-      setHelpRequests(prev => prev.map(req => 
-        req.id === selectedRequest.id ? { ...req, outputUploaded: true } : req
-      ));
-      alert(`✅ Output uploaded successfully for ${selectedRequest.userName}!`);
+    
+    if (!outputFile) {
+      alert('Please select a file to upload');
+      return;
+    }
+    
+    setUploading(true);
+    
+    try {
+      // Generate unique file name
+      const timestamp = Date.now();
+      const fileExt = outputFile.name.split('.').pop();
+      const fileName = `${selectedRequest.id}_${timestamp}.${fileExt}`;
+      const filePath = `outputs/${fileName}`;
+      
+      // Upload file to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('neuron-outputs')
+        .upload(filePath, outputFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      console.log('File uploaded successfully:', uploadData);
+      
+      // Update request status
+      const updatedRequests = helpRequests.map(req => 
+        req.id === selectedRequest.id 
+          ? { 
+              ...req, 
+              outputUploaded: true,
+              outputFileName: outputFile.name,
+              outputFilePath: filePath,
+              outputUploadedAt: new Date().toISOString()
+            } 
+          : req
+      );
+      
+      setHelpRequests(updatedRequests);
+      localStorage.setItem('assistanceRequests', JSON.stringify(updatedRequests));
+      
+      // Notify user via job logs
+      const jobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+      const currentTime = new Date().toLocaleTimeString();
+      const updatedJobs = jobs.map(job => 
+        job.id === selectedRequest.jobId
+          ? {
+              ...job,
+              hasOutput: true,
+              outputFileName: outputFile.name,
+              outputFilePath: filePath,
+              logs: [
+                ...job.logs,
+                `[${currentTime}] 📦 Output file ready: ${outputFile.name}`,
+                `[${currentTime}] ✅ Click "View Output" to download your results!`
+              ]
+            }
+          : job
+      );
+      localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
+      
+      alert(`✅ Output uploaded successfully for ${selectedRequest.userName}!\nFile: ${outputFile.name}`);
+      
       setShowOutputModal(false);
       setOutputFile(null);
       setSelectedRequest(null);
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert(`❌ Error uploading file: ${error.message}`);
+    } finally {
+      setUploading(false);
     }
+  };
+
+  const handleContactAdvertiser = (ad) => {
+    const subject = encodeURIComponent(`Re: ${ad.messageType} Request - Neuron Net`);
+    const body = encodeURIComponent(`Hi,\n\nThank you for your interest in Neuron Net.\n\nRegarding your ${ad.messageType} request:\n"${ad.message}"\n\nWe would like to discuss this further with you.\n\nBest regards,\nNeuron Net Team`);
+    window.location.href = `mailto:${ad.email}?subject=${subject}&body=${body}`;
   };
 
   if (loading) return <div className="dashboard-loading">Loading...</div>;
@@ -168,31 +245,51 @@ const TeamDashboard = () => {
           <span className="dashboard-role team">Team Dashboard</span>
         </div>
         <nav className="dashboard-nav">
-          <a href="#overview" className="nav-item active">
+          <a 
+            href="#overview" 
+            className={`nav-item ${activeView === 'overview' ? 'active' : ''}`}
+            onClick={(e) => { e.preventDefault(); setActiveView('overview'); }}
+          >
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
               <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
             </svg>
             Overview
           </a>
-          <a href="#help-requests" className="nav-item">
+          <a 
+            href="#help-requests" 
+            className={`nav-item ${activeView === 'help-requests' ? 'active' : ''}`}
+            onClick={(e) => { e.preventDefault(); setActiveView('help-requests'); }}
+          >
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
               <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
             </svg>
             Help Requests
           </a>
-          <a href="#ad-requests" className="nav-item">
+          <a 
+            href="#ad-requests" 
+            className={`nav-item ${activeView === 'ad-requests' ? 'active' : ''}`}
+            onClick={(e) => { e.preventDefault(); setActiveView('ad-requests'); }}
+          >
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
               <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/>
             </svg>
             Ad Requests
           </a>
-          <a href="#users" className="nav-item">
+          <a 
+            href="#users" 
+            className={`nav-item ${activeView === 'users' ? 'active' : ''}`}
+            onClick={(e) => { e.preventDefault(); setActiveView('users'); }}
+          >
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
               <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
             </svg>
             Active Users
           </a>
-          <a href="#analytics" className="nav-item">
+          <a 
+            href="#analytics" 
+            className={`nav-item ${activeView === 'analytics' ? 'active' : ''}`}
+            onClick={(e) => { e.preventDefault(); setActiveView('analytics'); }}
+          >
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
               <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
             </svg>
@@ -220,64 +317,67 @@ const TeamDashboard = () => {
           </div>
         </div>
 
-        <div className="dashboard-stats">
-          <div className="stat-card">
-            <div className="stat-icon green">
-              <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
-              </svg>
+        {activeView === 'overview' && (
+          <div className="dashboard-stats">
+            <div className="stat-card">
+              <div className="stat-icon green">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
+                </svg>
+              </div>
+              <div className="stat-content">
+                <h3>Pending Requests</h3>
+                <p className="stat-value">{helpRequests.filter(r => r.status === 'pending').length}</p>
+              </div>
             </div>
-            <div className="stat-content">
-              <h3>Pending Requests</h3>
-              <p className="stat-value">{helpRequests.filter(r => r.status === 'pending').length}</p>
-            </div>
-          </div>
 
-          <div className="stat-card">
-            <div className="stat-icon blue">
-              <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-              </svg>
+            <div className="stat-card">
+              <div className="stat-icon blue">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+              </div>
+              <div className="stat-content">
+                <h3>In Progress</h3>
+                <p className="stat-value">{helpRequests.filter(r => r.status === 'in-progress').length}</p>
+              </div>
             </div>
-            <div className="stat-content">
-              <h3>In Progress</h3>
-              <p className="stat-value">{helpRequests.filter(r => r.status === 'in-progress').length}</p>
-            </div>
-          </div>
 
-          <div className="stat-card">
-            <div className="stat-icon purple">
-              <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
+            <div className="stat-card">
+              <div className="stat-icon purple">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+              </div>
+              <div className="stat-content">
+                <h3>Completed Today</h3>
+                <p className="stat-value">{helpRequests.filter(r => r.status === 'completed').length}</p>
+              </div>
             </div>
-            <div className="stat-content">
-              <h3>Completed Today</h3>
-              <p className="stat-value">{helpRequests.filter(r => r.status === 'completed').length}</p>
-            </div>
-          </div>
 
-          <div className="stat-card">
-            <div className="stat-icon orange">
-              <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <h3>Active Users</h3>
-              <p className="stat-value">{(() => {
-                const jobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
-                const runningJobs = jobs.filter(j => j.status === 'running');
-                return runningJobs.length;
-              })()}</p>
+            <div className="stat-card">
+              <div className="stat-icon orange">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+              </div>
+              <div className="stat-content">
+                <h3>Active Users</h3>
+                <p className="stat-value">{(() => {
+                  const jobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+                  const runningJobs = jobs.filter(j => j.status === 'running');
+                  return runningJobs.length;
+                })()}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="dashboard-content">
-          <div className="content-card">
-            <h2>User Assistance Requests</h2>
-            <p className="card-subtitle">Help non-technical users with their compute tasks</p>
+          {activeView === 'help-requests' && (
+            <div className="content-card">
+              <h2>User Assistance Requests</h2>
+              <p className="card-subtitle">Help non-technical users with their compute tasks</p>
             
             {helpRequests.length === 0 ? (
               <div className="empty-state">
@@ -348,11 +448,13 @@ const TeamDashboard = () => {
               </div>
             )}
           </div>
+          )}
 
           {/* Ad Requests Section */}
-          <div className="content-card">
-            <h2>Advertisement Requests</h2>
-            <p className="card-subtitle">Review and manage advertisement inquiries</p>
+          {activeView === 'ad-requests' && (
+            <div className="content-card">
+              <h2>Advertisement Requests</h2>
+              <p className="card-subtitle">Review and manage advertisement inquiries</p>
             
             {adRequests.length === 0 ? (
               <div className="empty-state">
@@ -395,7 +497,10 @@ const TeamDashboard = () => {
                           </svg>
                           Deny
                         </button>
-                        <button className="btn-contact">
+                        <button 
+                          className="btn-contact"
+                          onClick={() => handleContactAdvertiser(ad)}
+                        >
                           Contact Advertiser
                         </button>
                       </div>
@@ -405,6 +510,35 @@ const TeamDashboard = () => {
               </div>
             )}
           </div>
+          )}
+
+          {/* Users View */}
+          {activeView === 'users' && (
+            <div className="content-card">
+              <h2>Active Users</h2>
+              <p className="card-subtitle">Monitor users currently running GPU compute tasks</p>
+              <div className="empty-state">
+                <svg width="64" height="64" fill="rgba(102, 126, 234, 0.3)" viewBox="0 0 24 24">
+                  <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+                <p>User monitoring dashboard coming soon</p>
+              </div>
+            </div>
+          )}
+
+          {/* Analytics View */}
+          {activeView === 'analytics' && (
+            <div className="content-card">
+              <h2>Analytics Dashboard</h2>
+              <p className="card-subtitle">Performance metrics and usage statistics</p>
+              <div className="empty-state">
+                <svg width="64" height="64" fill="rgba(102, 126, 234, 0.3)" viewBox="0 0 24 24">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                </svg>
+                <p>Analytics dashboard coming soon</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -447,14 +581,34 @@ const TeamDashboard = () => {
                 </div>
 
                 <div className="modal-actions">
-                  <button type="button" className="btn-cancel" onClick={() => setShowOutputModal(false)}>
+                  <button 
+                    type="button" 
+                    className="btn-cancel" 
+                    onClick={() => setShowOutputModal(false)}
+                    disabled={uploading}
+                  >
                     Cancel
                   </button>
-                  <button type="submit" className="btn-submit">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
-                    </svg>
-                    Upload Output
+                  <button 
+                    type="submit" 
+                    className="btn-submit"
+                    disabled={uploading || !outputFile}
+                  >
+                    {uploading ? (
+                      <>
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" className="spinning">
+                          <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                        </svg>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                        </svg>
+                        Upload Output
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
