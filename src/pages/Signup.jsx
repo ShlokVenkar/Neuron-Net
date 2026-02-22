@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { generateMonadWallet, encryptWalletKey } from '../utils/monadWallet';
 import './Auth.css';
 
 const Signup = () => {
@@ -29,21 +28,9 @@ const Signup = () => {
     setError('');
 
     try {
-      // Generate Monad wallet
-      const walletData = generateMonadWallet();
-      if (!walletData.success) {
-        throw new Error('Failed to generate wallet');
-      }
-
-      // Encrypt the private key with user's password
-      const encryptedWallet = await encryptWalletKey(walletData.privateKey, formData.password);
-
       const metadata = {
         full_name: formData.fullName,
-        user_type: selectedType,
-        wallet_address: walletData.address,
-        encrypted_wallet: encryptedWallet,
-        mnemonic: walletData.mnemonic
+        user_type: selectedType
       };
 
       // Add company field if seller
@@ -61,7 +48,7 @@ const Signup = () => {
 
       if (error) throw error;
 
-      alert(`✅ Account created successfully!\n\n🔐 Your Monad Wallet Address:\n${walletData.address}\n\n⚠️ IMPORTANT: Save your recovery phrase:\n"${walletData.mnemonic}"\n\nKeep this safe! You'll need it to recover your wallet.\n\nCheck your email for confirmation link.`);
+      alert(`✅ Account created successfully!\n\n📧 Check your email for confirmation link.\n\n💡 After logging in, connect your MetaMask wallet to start using the platform.`);
       navigate('/login');
     } catch (error) {
       setError(error.message);

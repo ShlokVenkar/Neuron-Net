@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import UserDashboard from './pages/UserDashboard';
 import SellerDashboard from './pages/SellerDashboard';
 import TeamDashboard from './pages/TeamDashboard';
+import UserSettings from './pages/UserSettings';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/dashboard/user" element={<UserDashboard />} />
         <Route path="/dashboard/seller" element={<SellerDashboard />} />
         <Route path="/dashboard/team" element={<TeamDashboard />} />
+        <Route path="/settings" element={<UserSettings />} />
       </Routes>
     </BrowserRouter>
   );

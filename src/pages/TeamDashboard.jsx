@@ -7,29 +7,54 @@ const TeamDashboard = () => {
   const [teamMember, setTeamMember] = useState(null);
   const [loading, setLoading] = useState(true);
   const [helpRequests, setHelpRequests] = useState([]);
+  const [adRequests, setAdRequests] = useState([]);
+  const [showOutputModal, setShowOutputModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [outputFile, setOutputFile] = useState(null);
 
   useEffect(() => {
     checkTeamMember();
-    // In a real app, this would fetch from a database
-    // For now, we'll use mock data
-    setHelpRequests([
-      {
-        id: 1,
-        userName: 'Alice Johnson',
-        email: 'alice@example.com',
-        workDescription: 'I need help setting up a machine learning pipeline for image classification. New to GPUs.',
-        timestamp: '2024-02-20 14:30',
-        status: 'pending'
-      },
-      {
-        id: 2,
-        userName: 'Bob Smith',
-        email: 'bob@example.com',
-        workDescription: 'Need assistance with CUDA setup for neural network training.',
-        timestamp: '2024-02-20 15:45',
-        status: 'in-progress'
+    
+    // Load assistance requests from localStorage
+    const loadRequests = () => {
+      const savedRequests = localStorage.getItem('assistanceRequests');
+      if (savedRequests) {
+        const requests = JSON.parse(savedRequests);
+        setHelpRequests(requests);
       }
-    ]);
+    };
+    
+    // Load ad requests from localStorage
+    const loadAdRequests = () => {
+      const savedAdRequests = localStorage.getItem('adRequests');
+      if (savedAdRequests) {
+        const requests = JSON.parse(savedAdRequests);
+        setAdRequests(requests);
+      } else {
+        // Initialize with sample data if none exists
+        setAdRequests([
+          {
+            id: 1,
+            email: 'marketing@gpucloud.io',
+            messageType: 'advertisement',
+            message: 'We would like to advertise our GPU cloud services for AI training. Budget: $500/month.',
+            timestamp: new Date().toLocaleString(),
+            status: 'pending'
+          }
+        ]);
+      }
+    };
+    
+    loadRequests();
+    loadAdRequests();
+    
+    // Reload every 10 seconds to check for new requests
+    const interval = setInterval(() => {
+      loadRequests();
+      loadAdRequests();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const checkTeamMember = () => {
@@ -48,19 +73,89 @@ const TeamDashboard = () => {
   };
 
   const handleAssist = (requestId) => {
-    // In a real app, this would update the database
-    setHelpRequests(prev => prev.map(req => 
+    const request = helpRequests.find(req => req.id === requestId);
+    if (!request) return;
+    
+    // Update assistance request status
+    const updatedRequests = helpRequests.map(req => 
       req.id === requestId ? { ...req, status: 'in-progress' } : req
-    ));
-    alert('You have been assigned to assist this user!');
+    );
+    setHelpRequests(updatedRequests);
+    localStorage.setItem('assistanceRequests', JSON.stringify(updatedRequests));
+    
+    // Update the job logs in activeJobs
+    const currentTime = new Date().toLocaleTimeString();
+    const jobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+    const updatedJobs = jobs.map(job => 
+      job.id === request.jobId 
+        ? { 
+            ...job, 
+            logs: [...job.logs, `[${currentTime}] ✅ Team accepted assistance request and is now working on it`] 
+          }
+        : job
+    );
+    localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
+    
+    alert('You have been assigned to assist this user! User will see updates in their dashboard.');
   };
 
   const handleComplete = (requestId) => {
-    // In a real app, this would update the database
-    setHelpRequests(prev => prev.map(req => 
+    const request = helpRequests.find(req => req.id === requestId);
+    if (!request) return;
+    
+    // Update assistance request status
+    const updatedRequests = helpRequests.map(req => 
       req.id === requestId ? { ...req, status: 'completed' } : req
+    );
+    setHelpRequests(updatedRequests);
+    localStorage.setItem('assistanceRequests', JSON.stringify(updatedRequests));
+    
+    // Update the job logs in activeJobs
+    const currentTime = new Date().toLocaleTimeString();
+    const jobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+    const updatedJobs = jobs.map(job => 
+      job.id === request.jobId 
+        ? { 
+            ...job, 
+            logs: [...job.logs, `[${currentTime}] ✅ Assistance completed! Your GPU task has been optimized.`] 
+          }
+        : job
+    );
+    localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
+    
+    alert('Request marked as completed! User will see the completion in their dashboard.');
+  };
+
+  const handleApproveAd = (adId) => {
+    setAdRequests(prev => prev.map(ad => 
+      ad.id === adId ? { ...ad, status: 'approved' } : ad
     ));
-    alert('Request marked as completed!');
+    alert('✅ Advertisement request approved!');
+  };
+
+  const handleDenyAd = (adId) => {
+    setAdRequests(prev => prev.map(ad => 
+      ad.id === adId ? { ...ad, status: 'denied' } : ad
+    ));
+    alert('❌ Advertisement request denied.');
+  };
+
+  const handleUploadOutput = (request) => {
+    setSelectedRequest(request);
+    setShowOutputModal(true);
+  };
+
+  const handleOutputSubmit = (e) => {
+    e.preventDefault();
+    if (outputFile) {
+      setHelpRequests(prev => prev.map(req => 
+        req.id === selectedRequest.id ? { ...req, outputUploaded: true } : req
+      ));
+      alert(`✅ Output uploaded successfully for ${selectedRequest.userName}!`);
+      setShowOutputModal(false);
+      setOutputFile(null);
+      setSelectedRequest(null);
+    }
   };
 
   if (loading) return <div className="dashboard-loading">Loading...</div>;
@@ -84,6 +179,12 @@ const TeamDashboard = () => {
               <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
             </svg>
             Help Requests
+          </a>
+          <a href="#ad-requests" className="nav-item">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/>
+            </svg>
+            Ad Requests
           </a>
           <a href="#users" className="nav-item">
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
@@ -155,6 +256,22 @@ const TeamDashboard = () => {
               <p className="stat-value">{helpRequests.filter(r => r.status === 'completed').length}</p>
             </div>
           </div>
+
+          <div className="stat-card">
+            <div className="stat-icon orange">
+              <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+              </svg>
+            </div>
+            <div className="stat-content">
+              <h3>Active Users</h3>
+              <p className="stat-value">{(() => {
+                const jobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+                const runningJobs = jobs.filter(j => j.status === 'running');
+                return runningJobs.length;
+              })()}</p>
+            </div>
+          </div>
         </div>
 
         <div className="dashboard-content">
@@ -196,15 +313,31 @@ const TeamDashboard = () => {
                         </button>
                       )}
                       {request.status === 'in-progress' && (
-                        <button 
-                          className="btn-complete"
-                          onClick={() => handleComplete(request.id)}
-                        >
-                          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                          </svg>
-                          Mark Complete
-                        </button>
+                        <>
+                          <button 
+                            className="btn-complete"
+                            onClick={() => handleComplete(request.id)}
+                          >
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            Mark Complete
+                          </button>
+                          <button 
+                            className="btn-upload"
+                            onClick={() => handleUploadOutput(request)}
+                          >
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                            </svg>
+                            Upload Output
+                          </button>
+                        </>
+                      )}
+                      {request.status === 'completed' && request.outputUploaded && (
+                        <span className="output-badge">
+                          ✓ Output Delivered
+                        </span>
                       )}
                       <button className="btn-contact">
                         Contact User
@@ -215,8 +348,120 @@ const TeamDashboard = () => {
               </div>
             )}
           </div>
+
+          {/* Ad Requests Section */}
+          <div className="content-card">
+            <h2>Advertisement Requests</h2>
+            <p className="card-subtitle">Review and manage advertisement inquiries</p>
+            
+            {adRequests.length === 0 ? (
+              <div className="empty-state">
+                <p>No ad requests at the moment</p>
+              </div>
+            ) : (
+              <div className="help-requests-list">
+                {adRequests.map(ad => (
+                  <div key={ad.id} className={`help-request-item status-${ad.status}`}>
+                    <div className="request-header">
+                      <div className="request-user">
+                        <h4>{ad.email}</h4>
+                        <p className="user-email">{ad.messageType.replace('-', ' ').toUpperCase()}</p>
+                      </div>
+                      <span className={`status-badge ${ad.status}`}>
+                        {ad.status}
+                      </span>
+                    </div>
+                    <div className="request-body">
+                      <p className="request-description">{ad.message}</p>
+                      <span className="request-time">{ad.timestamp}</span>
+                    </div>
+                    {ad.status === 'pending' && (
+                      <div className="request-actions">
+                        <button 
+                          className="btn-assist"
+                          onClick={() => handleApproveAd(ad.id)}
+                        >
+                          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                          </svg>
+                          Approve
+                        </button>
+                        <button 
+                          className="btn-cancel"
+                          onClick={() => handleDenyAd(ad.id)}
+                        >
+                          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                          </svg>
+                          Deny
+                        </button>
+                        <button className="btn-contact">
+                          Contact Advertiser
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Output Upload Modal */}
+      {showOutputModal && (
+        <div className="modal-overlay" onClick={() => setShowOutputModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Upload Task Output</h2>
+              <button className="modal-close" onClick={() => setShowOutputModal(false)}>
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="user-info-section">
+                <p><strong>User:</strong> {selectedRequest?.userName}</p>
+                <p><strong>Email:</strong> {selectedRequest?.email}</p>
+                <p><strong>Task:</strong> {selectedRequest?.workDescription}</p>
+              </div>
+
+              <form onSubmit={handleOutputSubmit}>
+                <div className="form-group">
+                  <label htmlFor="outputFile">
+                    Upload Output File (Results, Models, Reports, etc.)
+                    <span className="label-required">*</span>
+                  </label>
+                  <input
+                    id="outputFile"
+                    type="file"
+                    onChange={(e) => setOutputFile(e.target.files[0])}
+                    required
+                    className="file-input"
+                  />
+                  {outputFile && (
+                    <p className="file-name">Selected: {outputFile.name}</p>
+                  )}
+                </div>
+
+                <div className="modal-actions">
+                  <button type="button" className="btn-cancel" onClick={() => setShowOutputModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-submit">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                    </svg>
+                    Upload Output
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
