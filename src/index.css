@@ -1,0 +1,102 @@
+:root {
+  --primary-color: #9333ea;
+  --secondary-color: #6366f1;
+  --accent-color: #06b6d4;
+  --background: #0a0a1e;
+  --background-secondary: #0f0f23;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b0;
+  --glow-purple: rgba(147, 51, 234, 0.5);
+  --glow-blue: rgba(99, 102, 241, 0.5);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--background);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection */
+::selection {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-color);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--glow-purple);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--glow-purple), 0 0 60px var(--glow-blue);
+  }
+}
