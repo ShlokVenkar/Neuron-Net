@@ -11,7 +11,6 @@ const CosmicBackground = () => {
     const ctx = canvas.getContext('2d');
     let animationFrameId;
     let particles = [];
-    let connections = [];
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -25,10 +24,10 @@ const CosmicBackground = () => {
       constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.5;
-        this.vy = (Math.random() - 0.5) * 0.5;
-        this.radius = Math.random() * 2 + 1;
-        this.opacity = Math.random() * 0.5 + 0.3;
+        this.vx = (Math.random() - 0.5) * 0.2;
+        this.vy = (Math.random() - 0.5) * 0.2;
+        this.radius = Math.random() * 1.5 + 0.5;
+        this.opacity = Math.random() * 0.3 + 0.2;
       }
 
       update() {
@@ -42,22 +41,13 @@ const CosmicBackground = () => {
       draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(147, 51, 234, ${this.opacity})`;
-        ctx.fill();
-
-        // Glow effect
-        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 3);
-        gradient.addColorStop(0, `rgba(147, 51, 234, ${this.opacity * 0.5})`);
-        gradient.addColorStop(1, 'rgba(147, 51, 234, 0)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius * 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(139, 92, 246, ${this.opacity})`;
         ctx.fill();
       }
     }
 
-    // Create particles
-    for (let i = 0; i < 100; i++) {
+    // Create fewer particles for simpler look
+    for (let i = 0; i < 40; i++) {
       particles.push(new Particle());
     }
 
@@ -68,12 +58,12 @@ const CosmicBackground = () => {
           const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 150) {
-            const opacity = (1 - distance / 150) * 0.3;
+          if (distance < 120) {
+            const opacity = (1 - distance / 120) * 0.15;
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(147, 51, 234, ${opacity})`;
+            ctx.strokeStyle = `rgba(139, 92, 246, ${opacity})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
@@ -82,7 +72,7 @@ const CosmicBackground = () => {
     };
 
     const animate = () => {
-      ctx.fillStyle = 'rgba(10, 10, 30, 0.1)';
+      ctx.fillStyle = 'rgba(10, 10, 30, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach(particle => {
@@ -107,7 +97,6 @@ const CosmicBackground = () => {
     <>
       <canvas ref={canvasRef} className="cosmic-canvas" />
       <div className="cosmic-overlay"></div>
-      <div className="cosmic-stars"></div>
     </>
   );
 };
